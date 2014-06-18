@@ -1,0 +1,12 @@
+/*
+   This module detects faces in an image and draws a rectangle around it.
+*/
+
+var cv = require('../../../node_modules/opencv/lib/opencv');
+
+//
+var COLOR = [0, 255, 0];
+
+//
+var thickness = 2; 
+

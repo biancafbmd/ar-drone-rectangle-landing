@@ -1,0 +1,25 @@
+/*
+ This file saves the video from thr front/bottom camera in a
+ .h264 file.
+*/
+
+var arDrone = require('..');
+var PaVEParser = require('../lib/video/PaVEParser');
+var output = require('fs').createWriteStream('./vid.h264');
+var client  = arDrone.createClient();
+
+//change video channel to 0 for the front camera
+client.config('video:video_channel', '1');
+
+var video = client.getVideoStream();
+var parser = new PaVEParser();
+
+parser
+  .on('data', function(data) {
+    output.write(data.payload);
+  })
+  .on('end', function() {
+    output.end();
+  });
+
+video.pipe(parser);

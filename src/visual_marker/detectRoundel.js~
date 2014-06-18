@@ -1,0 +1,104 @@
+/*
+   This module is setting configuring the drone to detect the black and 
+   white roundel and print the detection results.
+*/
+
+var arDrone = require('ar-drone');
+var PaVEParser = require('../../../node_modules/ar-drone/lib/video/PaVEParser')
+var util = require('util');
+var output = require('fs').createWriteStream(__dirname + '/detectionResults.log', {flags : 'w'});
+var outputVideo = require('fs').createWriteStream('./vid.h264')
+
+var client = arDrone.createClient();
+var foundRoundel =0;
+
+//might need to config the navdata options 
+//client.config('general:navdata_demo', 'TRUE');
+
+client.config('control:flying_mode','1');
+//detects the roundel on bottom camera
+client.config('detect:detect_type','12');
+
+//detects the roundel on vertical camera
+//client.config('detect:detections_select_h','8');
+
+//detects the roundel on bottom camera
+//client.config('detect:detections_select_v','8');
+client.config('video:video_channel', '1');
+
+/*
+function printState(data){
+
+	if(data.visionDetect.nbDetected>0){
+	
+	}
+	output.write(util.format("distance: "));
+	output.write(util.format(data.visionDetect.dist) + '\n');
+	output.write(util.format("orientationAngle: "));
+	output.write(util.format(data.visionDetect.orientationAngle) + '\n');
+	output.write(util.format("xc: "));
+	output.write(util.format(data.visionDetect.xc) + '\n');
+	output.write(util.format("yc: "));
+	output.write(util.format(data.visionDetect.yc) + '\n');
+	output.write(util.format("width: "));
+	output.write(util.format(data.visionDetect.width) + '\n');
+	output.write(util.format("height: "));
+	output.write(util.format(data.visionDetect.height) + '\n');
+	output.write('\n');
+}*/
+
+function detected(){
+	
+	client.animateLeds('snakeGreenRed', 10, 3);
+	//client.stop();
+	client.after(1000, function(){
+    		this.land();
+  	});
+
+	console.log("Roundel found");
+}
+
+client.on('navdata', function(data){
+	//printData(data);
+	//console.log(data);
+	if(data.visionDetect){
+		if(data.visionDetect.nbDetected>0 && foundRoundel==0){
+			foundRoundel=1;		
+			detected();
+		}	
+	}
+});
+
+var video = client.getVideoStream();
+var parser = new PaVEParser();
+
+parser
+  .on('data', function(data) {
+    outputVideo.write(data.payload);
+  })
+  .on('end', function() {
+    outputVideo.end();
+  });
+
+video.pipe(parser);
+
+//client.ftrim();
+client.takeoff();
+
+/*
+client
+  .after(5000, function() {
+    this.stop();
+    this.land();
+  });	*/
+
+client
+  .after(4000, function() {
+    this.front(0.05);
+  })
+  .after(7000, function() {
+    this.stop();
+    this.land();
+  });
+
+
